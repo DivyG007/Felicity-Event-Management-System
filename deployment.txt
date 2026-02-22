@@ -1,2 +1,2 @@
-Frontend URL: <paste-your-deployed-frontend-url-here>
-Backend API URL: <paste-your-deployed-backend-url-here>
+Frontend URL: https://frontend-sand-psi-79.vercel.app
+Backend API URL: https://felicity-backend-q1i6.onrender.com
