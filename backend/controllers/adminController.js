@@ -4,6 +4,7 @@ const Event = require('../models/Event');
 const Registration = require('../models/Registration');
 const Feedback = require('../models/Feedback');
 const PasswordResetRequest = require('../models/PasswordResetRequest');
+const crypto = require('crypto');
 const { sendPasswordResetEmail } = require('../utils/emailTemplates');
 
 // POST /api/admin/organizers — Create new organizer
