@@ -4,8 +4,16 @@ const Event = require('../models/Event');
 const Registration = require('../models/Registration');
 const Feedback = require('../models/Feedback');
 const PasswordResetRequest = require('../models/PasswordResetRequest');
-const crypto = require('crypto');
 const { sendPasswordResetEmail } = require('../utils/emailTemplates');
+
+const generateTempPassword = (length = 12) => {
+    const charset = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+    let password = '';
+    for (let i = 0; i < length; i += 1) {
+        password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    return password;
+};
 
 // POST /api/admin/organizers — Create new organizer
 exports.createOrganizer = async (req, res, next) => {
@@ -15,7 +23,7 @@ exports.createOrganizer = async (req, res, next) => {
         // Auto-generate email and password
         const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '');
         const email = `${slug}@felicity.iiit.ac.in`;
-        const password = crypto.randomBytes(6).toString('hex'); // 12-char random password
+        const password = generateTempPassword(12);
 
         // Check if user already exists
         const existingUser = await User.findOne({ email });

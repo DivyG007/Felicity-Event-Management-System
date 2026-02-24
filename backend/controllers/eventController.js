@@ -139,74 +139,17 @@ exports.updateEvent = async (req, res, next) => {
             return res.status(403).json({ message: 'Not authorized' });
         }
 
-        const incoming = { ...req.body };
-
-        // Draft: free edits
-        if (event.status === 'draft') {
-            // Lock form if any registrations exist
-            if (event.registrationCount > 0 && incoming.customForm) {
-                return res.status(400).json({ message: 'Cannot modify form after registrations exist' });
-            }
-            Object.assign(event, incoming);
+        // Editing rules
+        if (event.status === 'completed' || event.status === 'closed') {
+            return res.status(400).json({ message: 'Cannot edit completed/closed events' });
         }
 
-        // Published: only description update, deadline extension, limit increase
-        else if (event.status === 'published') {
-            const allowedKeys = ['description', 'registrationDeadline', 'registrationLimit'];
-            const incomingKeys = Object.keys(incoming).filter((key) => key !== '_id');
-            const invalidKeys = incomingKeys.filter((key) => !allowedKeys.includes(key));
-
-            if (invalidKeys.length > 0) {
-                return res.status(400).json({
-                    message: 'Published events only allow updating description, extending deadline, and increasing registration limit',
-                });
-            }
-
-            if (incoming.registrationDeadline) {
-                const newDeadline = new Date(incoming.registrationDeadline);
-                const oldDeadline = new Date(event.registrationDeadline);
-                if (Number.isNaN(newDeadline.getTime())) {
-                    return res.status(400).json({ message: 'Invalid registration deadline' });
-                }
-                if (newDeadline < oldDeadline) {
-                    return res.status(400).json({ message: 'Registration deadline can only be extended for published events' });
-                }
-                event.registrationDeadline = newDeadline;
-            }
-
-            if (incoming.registrationLimit !== undefined) {
-                const oldLimit = event.registrationLimit;
-                const newLimit = incoming.registrationLimit === null || incoming.registrationLimit === ''
-                    ? null
-                    : Number(incoming.registrationLimit);
-
-                if (newLimit !== null && (!Number.isFinite(newLimit) || newLimit < 0)) {
-                    return res.status(400).json({ message: 'Invalid registration limit' });
-                }
-
-                if (oldLimit !== null) {
-                    if (newLimit === null || newLimit < oldLimit) {
-                        return res.status(400).json({ message: 'Registration limit can only be increased for published events' });
-                    }
-                }
-
-                if (newLimit !== null && newLimit < event.registrationCount) {
-                    return res.status(400).json({ message: 'Registration limit cannot be less than current registrations' });
-                }
-
-                event.registrationLimit = newLimit;
-            }
-
-            if (incoming.description !== undefined) {
-                event.description = incoming.description;
-            }
+        // Lock form if any registrations exist
+        if (event.registrationCount > 0 && req.body.customForm) {
+            return res.status(400).json({ message: 'Cannot modify form after registrations exist' });
         }
 
-        // Ongoing/Completed/Closed: no edits
-        else {
-            return res.status(400).json({ message: 'No direct edits allowed for ongoing/completed/closed events. Use status actions only.' });
-        }
-
+        Object.assign(event, req.body);
         await event.save();
         res.json(event);
     } catch (error) { next(error); }
@@ -227,7 +170,6 @@ exports.changeStatus = async (req, res, next) => {
             draft: ['published'],
             published: ['ongoing', 'closed'],
             ongoing: ['completed', 'closed'],
-            completed: ['closed'],
         };
 
         if (!allowed[event.status]?.includes(req.body.status)) {
