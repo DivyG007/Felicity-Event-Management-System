@@ -41,6 +41,14 @@ app.use('/api/organizers', require('./routes/organizers'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/feedback', require('./routes/feedback'));
 
+// Root route (Render base URL check)
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Felicity backend is running',
+    health: '/api/health',
+  });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
