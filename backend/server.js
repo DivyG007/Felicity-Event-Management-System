@@ -5,12 +5,44 @@ const http = require('http');
 const { Server } = require('socket.io');
 const connectDB = require('./config/db');
 const setupSocket = require('./socket');
+const User = require('./models/User');
 
 // Load env vars
 dotenv.config();
 
-// Connect to database
-connectDB();
+const ensureAdminUser = async () => {
+  try {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    if (!adminEmail || !adminPassword) {
+      console.log('ADMIN_EMAIL or ADMIN_PASSWORD not set; skipping admin bootstrap');
+      return;
+    }
+
+    const existingAdmin = await User.findOne({ role: 'admin' });
+
+    if (existingAdmin) {
+      existingAdmin.email = adminEmail.toLowerCase();
+      existingAdmin.password = adminPassword;
+      await existingAdmin.save();
+      console.log(`Admin updated successfully: ${existingAdmin.email}`);
+      return;
+    }
+
+    const admin = await User.create({
+      firstName: 'System',
+      lastName: 'Admin',
+      email: adminEmail.toLowerCase(),
+      password: adminPassword,
+      role: 'admin',
+    });
+
+    console.log(`Admin created successfully: ${admin.email}`);
+  } catch (error) {
+    console.error('Admin bootstrap failed:', error.message);
+  }
+};
 
 const app = express();
 const server = http.createServer(app);
@@ -58,6 +90,14 @@ app.get('/api/health', (req, res) => {
 app.use(require('./middleware/errorHandler'));
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+
+const startServer = async () => {
+  await connectDB();
+  await ensureAdminUser();
+
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+};
+
+startServer();
