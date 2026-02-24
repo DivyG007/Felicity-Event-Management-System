@@ -13,7 +13,8 @@ const formFieldSchema = new mongoose.Schema({
 const merchandiseDetailSchema = new mongoose.Schema({
     sizes: [{ type: String }],          // e.g. ['S', 'M', 'L', 'XL']
     colors: [{ type: String }],         // e.g. ['Red', 'Blue', 'Black']
-    variants: [{ type: String }],       // any custom variants
+    variants: { type: [String], default: ['Regular Fit', 'Oversized'] },  // e.g. ['Regular Fit', 'Oversized']
+    price: { type: Number, required: true, min: 0 },  // Price per unit
     stockQuantity: { type: Number, required: true, min: 0 },
     purchaseLimitPerUser: { type: Number, default: 1 },
 }, { _id: false });

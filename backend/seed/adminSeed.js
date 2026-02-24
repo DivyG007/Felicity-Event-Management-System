@@ -12,7 +12,12 @@ const seedAdmin = async () => {
         // Check if admin already exists
         const existingAdmin = await User.findOne({ role: 'admin' });
         if (existingAdmin) {
-            console.log('Admin already exists:', existingAdmin.email);
+            // Update existing admin with new credentials from .env
+            existingAdmin.email = process.env.ADMIN_EMAIL;
+            existingAdmin.password = process.env.ADMIN_PASSWORD; // Will be re-hashed by pre-save hook
+            existingAdmin.isModified('password'); // Ensure password gets re-hashed
+            await existingAdmin.save();
+            console.log('Admin updated successfully:', existingAdmin.email);
             process.exit(0);
         }
 

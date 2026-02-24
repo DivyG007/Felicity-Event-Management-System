@@ -159,10 +159,38 @@ export default function EventDetails() {
                                     {field.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                                 </select>
                             ) : field.type === 'checkbox' ? (
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                                    <input type="checkbox" onChange={e => setFormData({ ...formData, [field.label]: e.target.checked })} />
-                                    <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Yes</span>
-                                </label>
+                                field.options?.length > 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                                        {field.options.map(opt => (
+                                            <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={(formData[field.label] || []).includes(opt)}
+                                                    onChange={(e) => {
+                                                        const current = Array.isArray(formData[field.label]) ? formData[field.label] : [];
+                                                        const next = e.target.checked
+                                                            ? [...current, opt]
+                                                            : current.filter(item => item !== opt);
+                                                        setFormData({ ...formData, [field.label]: next });
+                                                    }}
+                                                />
+                                                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>{opt}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                        <input type="checkbox" onChange={e => setFormData({ ...formData, [field.label]: e.target.checked })} />
+                                        <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Yes</span>
+                                    </label>
+                                )
+                            ) : field.type === 'file' ? (
+                                <input
+                                    type="file"
+                                    className="search-bar"
+                                    onChange={e => setFormData({ ...formData, [field.label]: e.target.files?.[0]?.name || '' })}
+                                    required={field.required}
+                                />
                             ) : (
                                 <input type={field.type || 'text'} className="search-bar" onChange={e => setFormData({ ...formData, [field.label]: e.target.value })} required={field.required} />
                             )}

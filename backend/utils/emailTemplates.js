@@ -48,12 +48,16 @@ const sendPasswordResetEmail = async (email, organizerName, newPassword) => {
       </div>
       <div style="padding: 30px;">
         <p>Hi <strong>${organizerName}</strong>,</p>
-        <p>Your password has been reset by the administrator.</p>
+        ${newPassword
+            ? `<p>Your password has been reset by the administrator.</p>
         <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px; margin: 15px 0; text-align: center;">
           <p style="margin: 0 0 5px; opacity: 0.7;">Your new password:</p>
           <p style="margin: 0; font-size: 24px; font-family: monospace; color: #2ed573; letter-spacing: 2px;">${newPassword}</p>
         </div>
-        <p style="color: #ff6b7a;">⚠️ Please change this password after logging in.</p>
+        <p style="color: #ff6b7a;">⚠️ Please change this password after logging in.</p>`
+            : `<p>Your password reset request has been approved by the administrator.</p>
+        <p>You now have one-time permission to set a new password from your organizer profile.</p>`
+        }
         <p style="opacity: 0.5; font-size: 12px; margin-top: 20px;">This is an automated email from Felicity Event Management System.</p>
       </div>
     </div>

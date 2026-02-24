@@ -11,9 +11,9 @@ const generateToken = (user) => {
     );
 };
 
-// IIIT email domain validation
+// IIIT email domain validation — accepts name@<anyrole>.iiit.ac.in
 const isIIITEmail = (email) => {
-    return email.endsWith('@iiit.ac.in') || email.endsWith('@students.iiit.ac.in') || email.endsWith('@research.iiit.ac.in');
+    return /^[^@]+@[^@]+\.iiit\.ac\.in$/i.test(email);
 };
 
 // POST /api/auth/register
@@ -88,6 +88,9 @@ exports.login = async (req, res, next) => {
         if (user.role === 'organizer') {
             const organizer = await Organizer.findOne({ userId: user._id });
             if (!organizer || !organizer.active) {
+                if (organizer?.archived) {
+                    return res.status(401).json({ message: 'This organizer account is archived' });
+                }
                 return res.status(401).json({ message: 'This organizer account has been disabled' });
             }
         }

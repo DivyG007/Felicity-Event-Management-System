@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createEvent } from '../../api/eventApi';
 
+const SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+const VARIANT_OPTIONS = ['Regular Fit', 'Oversized', 'Slim Fit', 'Skinny', 'Relaxed Fit'];
+const COLOR_OPTIONS = ['Red', 'Blue', 'Black', 'White', 'Green', 'Yellow', 'Orange', 'Purple', 'Pink', 'Gray'];
+
 export default function CreateEvent() {
     const navigate = useNavigate();
     const [form, setForm] = useState({
@@ -9,7 +13,7 @@ export default function CreateEvent() {
         registrationDeadline: '', startDate: '', endDate: '',
         registrationLimit: '', registrationFee: 0, tags: '',
     });
-    const [merchDetails, setMerchDetails] = useState({ sizes: '', colors: '', stockQuantity: 0, purchaseLimitPerUser: 1 });
+    const [merchDetails, setMerchDetails] = useState({ sizes: '', colors: '', variants: '', price: '', stockQuantity: 0, purchaseLimitPerUser: 1 });
     const [customForm, setCustomForm] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -39,18 +43,38 @@ export default function CreateEvent() {
     const handleSubmit = async (status = 'draft') => {
         setLoading(true); setError('');
         try {
+            if (form.type === 'normal' && customForm.some(f => !String(f.label || '').trim())) {
+                setError('Each custom form field must have a label');
+                setLoading(false);
+                return;
+            }
+
+            if (form.type === 'normal' && customForm.some(f => (f.type === 'dropdown' || f.type === 'checkbox') && !String(f.options || '').trim())) {
+                setError('Dropdown/checkbox fields must include options');
+                setLoading(false);
+                return;
+            }
+
             const payload = {
                 ...form, status, tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
                 registrationLimit: form.registrationLimit ? Number(form.registrationLimit) : null,
                 registrationFee: Number(form.registrationFee),
             };
             if (form.type === 'normal') {
-                payload.customForm = customForm.map(f => ({ ...f, options: f.options ? f.options.split(',').map(o => o.trim()) : [] }));
+                payload.customForm = customForm.map((f, index) => ({
+                    ...f,
+                    order: index,
+                    options: (f.type === 'dropdown' || f.type === 'checkbox')
+                        ? (f.options ? f.options.split(',').map(o => o.trim()).filter(Boolean) : [])
+                        : [],
+                }));
             }
             if (form.type === 'merchandise') {
                 payload.merchandiseDetails = {
-                    sizes: merchDetails.sizes.split(',').map(s => s.trim()).filter(Boolean),
-                    colors: merchDetails.colors.split(',').map(c => c.trim()).filter(Boolean),
+                    sizes: merchDetails.sizes ? [merchDetails.sizes] : [],
+                    colors: merchDetails.colors ? [merchDetails.colors] : [],
+                    variants: merchDetails.variants ? [merchDetails.variants] : ['Regular Fit', 'Oversized'],
+                    price: Number(merchDetails.price),
                     stockQuantity: Number(merchDetails.stockQuantity),
                     purchaseLimitPerUser: Number(merchDetails.purchaseLimitPerUser),
                 };
@@ -91,9 +115,33 @@ export default function CreateEvent() {
                     {form.type === 'merchandise' && (
                         <div className="card">
                             <h3 style={{ marginBottom: '1rem' }}>Merchandise Details</h3>
-                            <div className="form-group" style={{ marginBottom: '0.75rem' }}><label>Sizes (comma-separated)</label><input className="search-bar" value={merchDetails.sizes} onChange={e => setMerchDetails({ ...merchDetails, sizes: e.target.value })} placeholder="S, M, L, XL" /></div>
-                            <div className="form-group" style={{ marginBottom: '0.75rem' }}><label>Colors (comma-separated)</label><input className="search-bar" value={merchDetails.colors} onChange={e => setMerchDetails({ ...merchDetails, colors: e.target.value })} placeholder="Red, Blue, Black" /></div>
+                            
+                            <div className="form-group" style={{ marginBottom: '0.75rem' }}>
+                                <label>Size</label>
+                                <select className="search-bar" value={merchDetails.sizes} onChange={(e) => setMerchDetails({ ...merchDetails, sizes: e.target.value })}>
+                                    <option value="">Select a size</option>
+                                    {SIZE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                            </div>
+
+                            <div className="form-group" style={{ marginBottom: '0.75rem' }}>
+                                <label>Variant</label>
+                                <select className="search-bar" value={merchDetails.variants} onChange={(e) => setMerchDetails({ ...merchDetails, variants: e.target.value })}>
+                                    <option value="">Select a variant</option>
+                                    {VARIANT_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
+                                </select>
+                            </div>
+
+                            <div className="form-group" style={{ marginBottom: '0.75rem' }}>
+                                <label>Color</label>
+                                <select className="search-bar" value={merchDetails.colors} onChange={(e) => setMerchDetails({ ...merchDetails, colors: e.target.value })}>
+                                    <option value="">Select a color</option>
+                                    {COLOR_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                            </div>
+
                             <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                <div className="form-group" style={{ flex: 1 }}><label>Item Price (₹) *</label><input type="number" className="search-bar" value={merchDetails.price || ''} onChange={e => setMerchDetails({ ...merchDetails, price: e.target.value })} placeholder="e.g., 299" /></div>
                                 <div className="form-group" style={{ flex: 1 }}><label>Stock Quantity *</label><input type="number" className="search-bar" value={merchDetails.stockQuantity} onChange={e => setMerchDetails({ ...merchDetails, stockQuantity: e.target.value })} /></div>
                                 <div className="form-group" style={{ flex: 1 }}><label>Purchase Limit/User</label><input type="number" className="search-bar" value={merchDetails.purchaseLimitPerUser} onChange={e => setMerchDetails({ ...merchDetails, purchaseLimitPerUser: e.target.value })} /></div>
                             </div>
@@ -120,7 +168,7 @@ export default function CreateEvent() {
                                     )}
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                                            <input type="checkbox" checked={field.required} onChange={e => updateField(i, 'required', e.target.checked)} /> <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>Required</span>
+                                            <input type="checkbox" checked={field.required} onChange={e => updateField(i, 'required', e.target.checked)} /> <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>{field.required ? 'Required' : 'Flexible (Optional)'}</span>
                                         </label>
                                         <div style={{ display: 'flex', gap: '0.3rem' }}>
                                             <button className="btn btn-secondary" style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }} onClick={() => moveField(i, -1)}>↑</button>

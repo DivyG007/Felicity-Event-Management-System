@@ -1,8 +1,9 @@
 const User = require('../models/User');
 const Organizer = require('../models/Organizer');
 const Event = require('../models/Event');
+const Registration = require('../models/Registration');
+const Feedback = require('../models/Feedback');
 const PasswordResetRequest = require('../models/PasswordResetRequest');
-const crypto = require('crypto');
 const { sendPasswordResetEmail } = require('../utils/emailTemplates');
 
 // POST /api/admin/organizers — Create new organizer
@@ -57,13 +58,64 @@ exports.listOrganizers = async (req, res, next) => {
 };
 
 // DELETE /api/admin/organizers/:id
+// Query param action supports: disable, enable, archive, unarchive, delete
 exports.removeOrganizer = async (req, res, next) => {
     try {
         const org = await Organizer.findById(req.params.id);
         if (!org) return res.status(404).json({ message: 'Organizer not found' });
-        org.active = !org.active;
-        await org.save();
-        res.json({ message: `Organizer ${org.active ? 'enabled' : 'disabled'}`, organizer: org });
+        
+        const { action = '' } = req.query;
+        
+        if (action === 'delete') {
+            // Permanent deletion with cascade
+            const events = await Event.find({ organizerId: org._id });
+            const eventIds = events.map(e => e._id);
+            
+            // Delete all registrations for these events
+            await Registration.deleteMany({ eventId: { $in: eventIds } });
+            
+            // Delete all feedback for these events
+            await Feedback.deleteMany({ eventId: { $in: eventIds } });
+            
+            // Delete all events
+            await Event.deleteMany({ organizerId: org._id });
+            
+            // Delete the organizer
+            await Organizer.findByIdAndDelete(req.params.id);
+            
+            // Delete associated user
+            await User.findByIdAndDelete(org.userId);
+            
+            res.json({ message: 'Organizer and all associated data permanently deleted' });
+        } else if (action === 'archive') {
+            org.active = false;
+            org.archived = true;
+            org.archivedAt = new Date();
+            await org.save();
+            res.json({ message: 'Organizer archived', organizer: org });
+        } else if (action === 'unarchive') {
+            org.archived = false;
+            org.archivedAt = null;
+            org.active = true;
+            await org.save();
+            res.json({ message: 'Organizer unarchived and enabled', organizer: org });
+        } else if (action === 'disable') {
+            org.active = false;
+            await org.save();
+            res.json({ message: 'Organizer disabled', organizer: org });
+        } else if (action === 'enable') {
+            if (org.archived) {
+                return res.status(400).json({ message: 'Cannot enable an archived organizer. Unarchive first.' });
+            }
+            org.active = true;
+            await org.save();
+            res.json({ message: 'Organizer enabled', organizer: org });
+        } else {
+            // Backward compatibility: toggle active status
+            org.active = !org.active;
+            await org.save();
+            res.json({ message: `Organizer ${org.active ? 'enabled' : 'disabled'}`, organizer: org });
+        }
     } catch (error) { next(error); }
 };
 
@@ -84,23 +136,36 @@ exports.handlePasswordResetRequest = async (req, res, next) => {
         const request = await PasswordResetRequest.findById(req.params.id);
         if (!request) return res.status(404).json({ message: 'Request not found' });
 
+        if (request.status !== 'pending') {
+            return res.status(400).json({ message: 'Only pending requests can be processed' });
+        }
+
         const { action } = req.body; // 'approve' or 'reject'
         if (action === 'approve') {
-            const newPassword = crypto.randomBytes(6).toString('hex');
             const user = await User.findById(request.userId);
-            user.password = newPassword;
+            if (!user) return res.status(404).json({ message: 'User not found' });
+            if (!request.newPassword) {
+                return res.status(400).json({ message: 'Requested new password not found on this request' });
+            }
+
+            user.password = request.newPassword;
             await user.save();
+
             request.status = 'approved';
-            request.newPassword = newPassword;
+            request.approvedAt = new Date();
+            request.selfResetUsed = true;
+            request.selfResetUsedAt = new Date();
+            request.resolvedAt = new Date();
             await request.save();
 
-            // Send email notification (non-blocking)
+            // Send approval notification (non-blocking)
             const org = await Organizer.findById(request.organizerId);
-            sendPasswordResetEmail(user.email, org?.name || 'Organizer', newPassword);
+            sendPasswordResetEmail(user.email, org?.name || 'Organizer');
 
-            res.json({ message: 'Password reset approved', newPassword });
+            res.json({ message: 'Password reset approved and applied successfully.' });
         } else {
             request.status = 'rejected';
+            request.resolvedAt = new Date();
             await request.save();
             res.json({ message: 'Password reset rejected' });
         }

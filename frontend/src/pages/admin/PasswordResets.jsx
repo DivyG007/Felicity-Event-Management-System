@@ -25,14 +25,15 @@ export default function PasswordResets() {
             ) : (
                 <div className="card">
                     <table className="data-table">
-                        <thead><tr><th>Organizer</th><th>Email</th><th>Requested</th><th>Status</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Organizer</th><th>Email</th><th>Reason</th><th>Requested</th><th>Status</th><th>Actions</th></tr></thead>
                         <tbody>
                             {requests.map(req => (
                                 <tr key={req._id}>
                                     <td style={{ fontWeight: 600 }}>{req.organizerId?.name || 'Unknown'}</td>
                                     <td>{req.userId?.email}</td>
+                                    <td>{req.reason || '—'}</td>
                                     <td>{new Date(req.createdAt).toLocaleDateString()}</td>
-                                    <td><span className={`badge ${req.status === 'pending' ? 'badge-ongoing' : req.status === 'approved' ? 'badge-published' : 'badge-closed'}`}>{req.status}</span></td>
+                                    <td><span className={`badge ${req.status === 'pending' ? 'badge-ongoing' : req.status === 'approved' ? 'badge-published' : req.status === 'completed' ? 'badge-completed' : 'badge-closed'}`}>{req.status}</span></td>
                                     <td>
                                         {req.status === 'pending' && (
                                             <div style={{ display: 'flex', gap: '0.4rem' }}>

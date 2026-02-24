@@ -26,6 +26,6 @@ services:
       - key: SMTP_PASS
         sync: false
       - key: ADMIN_EMAIL
-        value: admin@felicity.com
+        value: admin@felicity.iiit.ac.in
       - key: ADMIN_PASSWORD
         sync: false

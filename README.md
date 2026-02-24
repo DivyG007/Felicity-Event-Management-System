@@ -75,7 +75,7 @@ Make sure the following are installed on your machine before proceeding:
    SMTP_USER=your_email@gmail.com
    SMTP_PASS=your_app_password
 
-   ADMIN_EMAIL=admin@felicity.com
+   ADMIN_EMAIL=admin@felicity.iiit.ac.in
    ADMIN_PASSWORD=Admin@123
    ```
    > Replace `SMTP_USER` and `SMTP_PASS` with real Gmail credentials if you need email functionality.
@@ -84,7 +84,7 @@ Make sure the following are installed on your machine before proceeding:
    ```bash
    node seed/adminSeed.js
    ```
-   You should see: `Admin created successfully: admin@felicity.com`
+   You should see: `Admin created successfully: admin@felicity.iiit.ac.in`
 
 6. Start the backend server:
    ```bash
@@ -129,7 +129,7 @@ Make sure the following are installed on your machine before proceeding:
 
 ### Step 4: Log In
 
-- **Admin**: Use the credentials from your `.env` file (default: `admin@felicity.com` / `Admin@123`).
+- **Admin**: Use the credentials from your `.env` file (default: `admin@felicity.iiit.ac.in` / `Admin@123`).
 - **Participant**: Click "Sign Up" to create a new account.
 - **Organizer**: Organizer accounts are created by the Admin from the Admin Dashboard.
 
@@ -165,7 +165,7 @@ Make sure the following are installed on your machine before proceeding:
    | `JWT_SECRET` | Any random secret string |
    | `JWT_EXPIRE` | `7d` |
    | `CLIENT_URL` | (leave blank for now, fill after Step 3) |
-   | `ADMIN_EMAIL` | `admin@felicity.com` |
+   | `ADMIN_EMAIL` | `admin@felicity.iiit.ac.in` |
    | `ADMIN_PASSWORD` | `Admin@123` |
 6. Click **Create Web Service**. Wait for the deploy to finish.
 7. Copy the deployed URL (e.g. `https://felicity-backend.onrender.com`).

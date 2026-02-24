@@ -116,7 +116,7 @@ export default function Register() {
                             name="email"
                             value={form.email}
                             onChange={handleChange}
-                            placeholder={form.participantType === 'iiit' ? 'yourname@iiit.ac.in' : 'your@email.com'}
+                            placeholder={form.participantType === 'iiit' ? 'yourname@role.iiit.ac.in' : 'your@email.com'}
                             required
                         />
                         {form.participantType === 'iiit' && (

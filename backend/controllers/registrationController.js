@@ -53,6 +53,19 @@ exports.register = async (req, res, next) => {
         const ticketId = `FEL-${Date.now().toString(36).toUpperCase()}-${uuidv4().substring(0, 4).toUpperCase()}`;
         const qrCode = await QRCode.toDataURL(JSON.stringify({ ticketId, eventId, participantId: user._id.toString() }));
 
+        // Determine initial status based on event type and payment requirement
+        let initialStatus = 'registered';
+        let initialPaymentStatus = 'none';
+        
+        if (event.type === 'merchandise') {
+            initialStatus = 'pending-payment';
+            initialPaymentStatus = 'pending';
+        } else if (event.registrationFee > 0) {
+            // Normal event with fee - require payment proof
+            initialStatus = 'pending-payment';
+            initialPaymentStatus = 'pending';
+        }
+
         const registration = await Registration.create({
             participantId: user._id,
             eventId,
@@ -63,8 +76,8 @@ exports.register = async (req, res, next) => {
             selectedColor,
             selectedVariant,
             quantity: quantity || 1,
-            status: event.type === 'merchandise' ? 'pending-payment' : 'registered',
-            paymentStatus: event.type === 'merchandise' ? 'pending' : 'none',
+            status: initialStatus,
+            paymentStatus: initialPaymentStatus,
         });
 
         // Increment count
@@ -147,9 +160,17 @@ exports.updatePaymentStatus = async (req, res, next) => {
 // POST /api/registrations/:id/attendance
 exports.markAttendance = async (req, res, next) => {
     try {
-        const reg = await Registration.findById(req.params.id);
+        const reg = await Registration.findById(req.params.id).populate('eventId');
         if (!reg) return res.status(404).json({ message: 'Registration not found' });
         if (reg.status === 'attended') return res.status(400).json({ message: 'Already marked as attended' });
+        
+        // Check if payment is required and approved
+        if (reg.eventId.registrationFee > 0 || reg.eventId.type === 'merchandise') {
+            if (reg.paymentStatus !== 'approved') {
+                return res.status(400).json({ message: 'Payment must be approved before marking attendance' });
+            }
+        }
+        
         reg.status = 'attended';
         reg.attendedAt = new Date();
         reg.attendanceMarkedBy = req.user._id;

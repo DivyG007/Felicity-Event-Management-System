@@ -240,6 +240,22 @@ a {
   border-color: #667eea;
 }
 
+select.search-bar {
+  background: rgba(24, 28, 52, 0.95);
+  color: #ffffff;
+}
+
+select.search-bar option {
+  background-color: #171b33;
+  color: #ffffff;
+}
+
+select.search-bar option:checked,
+select.search-bar option:hover {
+  background-color: #667eea;
+  color: #ffffff;
+}
+
 /* Stat cards */
 .stat-card {
   background: rgba(255, 255, 255, 0.05);
