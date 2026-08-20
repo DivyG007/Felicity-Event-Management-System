@@ -25,16 +25,11 @@ A centralized event management platform for the Felicity fest, built using the M
 
 ## Advanced Features Implemented
 
-### Tier A (8 Marks Each)
 1. **Merchandise Payment Approval Workflow** — Payment proof upload, organizer approval/rejection, conditional ticket generation
 2. **QR Scanner & Attendance Tracking** — Camera-based QR scanning, duplicate rejection, live attendance dashboard, CSV export
-
-### Tier B (6 Marks Each)
-1. **Organizer Password Reset Workflow** — Request/approve/reject flow via Admin dashboard
-2. **Real-Time Discussion Forum** — Socket.IO powered event discussion with moderation
-
-### Tier C (2 Marks)
-1. **Anonymous Feedback System** — Star ratings + text comments for completed events
+3. **Organizer Password Reset Workflow** — Request/approve/reject flow via Admin dashboard
+4. **Real-Time Discussion Forum** — Socket.IO powered event discussion with moderation
+5. **Anonymous Feedback System** — Star ratings + text comments for completed events
 
 ## Setup & Installation
 
